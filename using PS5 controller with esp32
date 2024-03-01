@@ -1,8 +1,8 @@
 //don't forget to change the Mac address to yours, you can find your controller's Mac address with the DS4 software sorry for the extra spacing lines
 //am still working on making run analogically
 // tested with esp32 s2 on Arduino ide, make sure you download the library from here https://github.com/rodneybakiskan/ps5-esp32.git
-#include <ps5Controller.h>
 
+#include <ps5Controller.h>
 void setup() {
 
  Serial.begin(921600);
