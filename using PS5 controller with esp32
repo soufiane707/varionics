@@ -1,131 +1,214 @@
-//don't forget to change the Mac address, you can find your controller's Mac address with the ds4 software
-#include "ps5Controller.h"
+//don't forget to change the mac address to yours, you can find your controller's mac address with the ds4 software sorry for the extra spacing lines
+//am still working on making run analogically
+#include <ps5Controller.h>
 
-#include <esp_bt_defs.h>
-#include <esp_bt_main.h>
+void setup() {
 
-extern "C" {
-#include "ps5.h"
+ Serial.begin(921600);
+
+ pinMode(16,OUTPUT);
+
+ pinMode(17,OUTPUT);
+
+ pinMode(18,OUTPUT);
+
+ pinMode(19,OUTPUT);
+
+ pinMode(22,OUTPUT);
+
+ pinMode(23,OUTPUT);
+
+ ps5.begin("1a:2b:3c:01:01:01"); //replace with MAC address of your controller
+
+ Serial.println("Ready.");
+
+ digitalWrite(22,HIGH);
+
+ digitalWrite(23,HIGH);
+
 }
 
-#define ESP_BD_ADDR_HEX_PTR(addr) \
-  (uint8_t*)addr + 0, (uint8_t*)addr + 1, (uint8_t*)addr + 2, \
-  (uint8_t*)addr + 3, (uint8_t*)addr + 4, (uint8_t*)addr + 5
 
-ps5Controller::ps5Controller() {}
 
-bool ps5Controller::begin() {
-  ps5SetEventObjectCallback(this, &ps5Controller::_event_callback);
-  ps5SetConnectionObjectCallback(this, &ps5Controller::_connection_callback);
+void loop() {
 
-  if (!btStarted() && !btStart()) {
-    log_e("btStart failed");
-    return false;
+// while (ps5.isConnected() == false) { // commented out as ps5 controller seems to connect quicker when microcontroller is doing nothing
+
+//  Serial.println("PS5 controller not found");
+
+//  delay(300);
+
+// }
+
+
+
+ while (ps5.isConnected() == true) {
+
+  if (ps5.Right()) Serial.println("Right Button");
+
+  if (ps5.Down()) Serial.println("Down Button");
+
+  if (ps5.Up()) Serial.println("Up Button");
+
+  if (ps5.Left()) Serial.println("Left Button");
+
+
+
+  if (ps5.Square()) Serial.println("Square Button");
+
+  if (ps5.Cross()) Serial.println("Cross Button");
+
+  if (ps5.Circle()) Serial.println("Circle Button");
+
+  if (ps5.Triangle()) Serial.println("Triangle Button");
+
+
+
+  if (ps5.UpRight()) Serial.println("Up Right");
+
+  if (ps5.DownRight()) Serial.println("Down Right");
+
+  if (ps5.UpLeft()) Serial.println("Up Left");
+
+  if (ps5.DownLeft()) Serial.println("Down Left");
+
+
+
+  if (ps5.L1()) Serial.println("L1 Button");
+
+  if (ps5.R1()) Serial.println("R1 Button");
+
+
+
+  if (ps5.Share()) Serial.println("Share Button");
+
+  if (ps5.Options()) Serial.println("Options Button");
+
+  if (ps5.L3()) Serial.println("L3 Button");
+
+  if (ps5.R3()) Serial.println("R3 Button");
+
+
+
+  if (ps5.PSButton()) Serial.println("PS Button");
+
+  if (ps5.Touchpad()) Serial.println("Touch Pad Button");
+
+
+
+  if (ps5.L2()) {
+
+   Serial.printf("L2 button at %d\n", ps5.L2Value());
+
   }
 
-  esp_bluedroid_status_t btState = esp_bluedroid_get_status();
-  if (btState == ESP_BLUEDROID_STATUS_UNINITIALIZED) {
-    if (esp_bluedroid_init()) {
-      log_e("esp_bluedroid_init failed");
-      return false;
-    }
+  if (ps5.R2()) {
+
+   Serial.printf("R2 button at %d\n", ps5.R2Value());
+
   }
 
-  if (btState != ESP_BLUEDROID_STATUS_ENABLED) {
-    if (esp_bluedroid_enable()) {
-      log_e("esp_bluedroid_enable failed");
-      return false;
-    }
+
+
+  if (ps5.LStickX()) {
+
+   Serial.printf("Left Stick x at %d\n", ps5.LStickX());
+
+
   }
 
-  ps5Init();
-  return true;
-}
+  if (ps5.LStickY()) {
 
-bool ps5Controller::begin(const char* mac) {
-  esp_bd_addr_t addr;
-    
-  if (sscanf(mac, ESP_BD_ADDR_STR, ESP_BD_ADDR_HEX_PTR(addr)) != ESP_BD_ADDR_LEN) {
-    log_e("Could not convert %s\n to a MAC address", mac);
-    return false;
+   Serial.printf("Left Stick y at %d\n", ps5.LStickY());
+
+   if(ps5.LStickY()>100){
+
+    digitalWrite(16,HIGH);
+
+    digitalWrite(17,LOW);
+
+   }
+
+   else{
+
+    digitalWrite(17,LOW);
+
+    digitalWrite(16,LOW);
+
+   }
+
+   }
+
+   if(ps5.LStickY()<20){
+
+    digitalWrite(17,HIGH);
+
+    digitalWrite(16,LOW);
+
+   }
+
+   else{
+
+    digitalWrite(16,LOW);
+
+    digitalWrite(17,LOW);
+
+   }
+
   }
 
-  ps5_l2cap_connect(addr);
-  // ps5SetBluetoothMacAddress(addr);
+  if (ps5.RStickX()) {
 
-  return begin();
-}
+   Serial.printf("Right Stick x at %d\n", ps5.RStickX());
 
-void ps5Controller::end() {}
-
-bool ps5Controller::isConnected() {
-  auto connected = ps5IsConnected();
-  static unsigned long tryReconnectAt = 0;
-  if (!connected && millis() - tryReconnectAt > 5000UL) {
-    tryReconnectAt = millis();
-    ps5_l2cap_reconnect();
   }
-  return connected;
-}
 
-void ps5Controller::setLed(uint8_t r, uint8_t g, uint8_t b) {
-  output.r = r;
-  output.g = g;
-  output.b = b;
-}
+  if (ps5.RStickY()) {
 
-void ps5Controller::setRumble(uint8_t small, uint8_t large) {
-  output.smallRumble = small;
-  output.largeRumble = large;
-}
+   Serial.printf("Right Stick y at %d\n", ps5.RStickY());
 
-void ps5Controller::setFlashRate(uint8_t onTime, uint8_t offTime) {
-  output.flashOn = onTime / 10;
-  output.flashOff = offTime / 10;
-}
+    if(ps5.RStickY()>100){
 
-void ps5Controller::sendToController() { ps5SetOutput(output); }
+    digitalWrite(18,HIGH);
 
-void ps5Controller::attach(callback_t callback) { _callback_event = callback; }
+    digitalWrite(19,LOW);
 
-void ps5Controller::attachOnConnect(callback_t callback) {
-  _callback_connect = callback;
-}
+   }
 
-void ps5Controller::attachOnDisconnect(callback_t callback) {
-  _callback_disconnect = callback;
-}
+   else{
 
-void ps5Controller::_event_callback(
-  void* object, ps5_t data, ps5_event_t event) {
-  ps5Controller* This = (ps5Controller*)object;
+    digitalWrite(19,LOW);
 
-  memcpy(&This->data, &data, sizeof(ps5_t));
-  memcpy(&This->event, &event, sizeof(ps5_event_t));
+    digitalWrite(18,LOW);
 
-  if (This->_callback_event) {
-    This->_callback_event();
+   }
+
+   if(ps5.RStickY()<20){
+
+    digitalWrite(19,HIGH);
+
+    digitalWrite(18,LOW);
+
+   }
+
+   else{
+
+    digitalWrite(19,LOW);
+
+    digitalWrite(18,LOW);
+
+   }
+
   }
-}
 
-void ps5Controller::_connection_callback(void* object, uint8_t isConnected) {
-  ps5Controller* This = (ps5Controller*)object;
 
-  if (isConnected) {
-    delay(250);  // ToDo: figure out how to know when the channel is free again
-                 // so this delay can be removed
 
-    if (This->_callback_connect) {
-      This->_callback_connect();
-    }
-  }
-  else {
-    if (This->_callback_disconnect) {
-      This->_callback_disconnect();
-    }
-  }
-}
+  Serial.println();
 
-#if !defined(NO_GLOBAL_INSTANCES)
-ps5Controller ps5;
-#endif
+  // This delay is to make the output more human readable
+
+  // Remove it when you're not trying to see the output
+
+  //delay(300);
+
+ }
