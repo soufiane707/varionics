@@ -1,3 +1,4 @@
+//don't forget to change the Mac address, you can find your controller's Mac address with the ds4 software
 #include "ps5Controller.h"
 
 #include <esp_bt_defs.h>
